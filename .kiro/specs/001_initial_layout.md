@@ -20,7 +20,7 @@
 
 ### Phase 1 — Root Configuration Files
 
-- [ ] **1.1 — `package.json`**
+- [x] **1.1 — `package.json`**
   - Set `"name": "emoji-rebus-blitz"`
   - Set `"version": "0.1.0"`
   - Set `"type": "module"` to enable ES Module syntax across all Node files
