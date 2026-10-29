@@ -1,90 +1,86 @@
 /**
- * Submission endpoint with validation
+ * Submission endpoint with KV storage
  * POST /api/submit
  */
+import { puzzleManager } from '../lib/kv-puzzle-manager.js';
+import { validateSubmission } from '../lib/validation.js';
+
 export default async function handler(req, res) {
-    if (req.method !== 'POST') {
-        res.status(405).json({ error: 'Method not allowed' });
-        return;
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  
+  // Handle preflight
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+  
+  if (req.method !== 'POST') {
+    res.status(405).json({ 
+      success: false, 
+      error: 'Method not allowed. Use POST.' 
+    });
+    return;
+  }
+  
+  try {
+    // Parse request body
+    let body = '';
+    for await (const chunk of req) {
+      body += chunk;
     }
     
-    try {
-        const body = await parseBody(req);
-        
-        // Validate required fields
-        if (!body.emoji || !body.answer || !body.hint) {
-            return res.status(400).json({ 
-                error: 'All fields are required.' 
-            });
-        }
-        
-        // Check for emoji presence
-        if (!containsEmoji(body.emoji)) {
-            return res.status(400).json({ 
-                error: 'Emoji field must contain at least one emoji.' 
-            });
-        }
-        
-        // Normalize answer
-        const normalizedAnswer = normalizeAnswer(body.answer);
-        
-        // Log submission (for now - will write to KV in Spec 002)
-        console.log('Puzzle submission received:', {
-            emoji: body.emoji,
-            originalAnswer: body.answer,
-            normalizedAnswer,
-            hint: body.hint
-        });
-        
-        // Return success with normalized answer
-        res.status(200).json({
-            success: true,
-            message: 'Puzzle received (stub).',
-            normalizedAnswer
-        });
-        
-    } catch (error) {
-        console.error('Submission error:', error);
-        res.status(400).json({ error: 'Invalid request format' });
+    const data = JSON.parse(body || '{}');
+    
+    // Validate submission
+    const validation = validateSubmission(data);
+    
+    if (!validation.isValid) {
+      res.status(400).json({
+        success: false,
+        errors: validation.errors,
+        message: 'Validation failed',
+      });
+      return;
     }
-}
-
-/**
- * Parse request body
- */
-async function parseBody(req) {
-    return new Promise((resolve, reject) => {
-        let body = '';
-        req.on('data', chunk => body += chunk.toString());
-        req.on('end', () => {
-            try {
-                resolve(JSON.parse(body));
-            } catch (error) {
-                reject(error);
-            }
-        });
-        req.on('error', reject);
+    
+    // Store puzzle in KV
+    const storageResult = await puzzleManager.storePuzzle(validation.normalizedData);
+    
+    if (!storageResult.success) {
+      console.error('Failed to store puzzle:', storageResult);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to save puzzle to database',
+        details: storageResult.details || 'Unknown error',
+      });
+      return;
+    }
+    
+    // Success response
+    res.status(200).json({
+      success: true,
+      message: 'Puzzle submitted successfully!',
+      normalizedAnswer: validation.normalizedData.answer,
+      puzzleId: storageResult.puzzleId,
+      timestamp: new Date().toISOString(),
     });
-}
-
-/**
- * Check if string contains at least one emoji
- */
-function containsEmoji(text) {
-    // Simple emoji detection using Unicode ranges
-    // This covers most common emojis but could be expanded
-    const emojiRegex = /[\p{Emoji}\p{Emoji_Modifier}\p{Emoji_Component}\p{Emoji_Presentation}]/gu;
-    return emojiRegex.test(text);
-}
-
-/**
- * Normalize answer string
- * - Convert to lowercase
- * - Remove non-alphanumeric characters (except spaces)
- */
-function normalizeAnswer(answer) {
-    return answer
-        .toLowerCase()
-        .replace(/[^a-z0-9\s]/g, '')  // Remove non-alphanumeric (keep spaces)
-        .trim();
+    
+  } catch (error) {
+    console.error('Submission error:', error);
+    
+    if (error instanceof SyntaxError) {
+      res.status(400).json({
+        success: false,
+        error: 'Invalid JSON format in request body',
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        error: 'Internal server error processing submission',
+      });
+    }
+  }
 }
