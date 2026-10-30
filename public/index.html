@@ -4,94 +4,136 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Rebus Blitz</title>
-    <meta name="description" content="Fast-paced, addictive rebus puzzle game. Decode the clues before the clock expires!">
+    <meta name="description" content="Fast-paced rebus puzzle game. Decode the clues before the clock expires!">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-    <!-- Ambient Background Lighting -->
+    <!-- Ambient Canvas Background -->
     <div class="ambient-glow glow-top"></div>
     <div class="ambient-glow glow-bottom"></div>
 
     <div class="app-layout">
-        <!-- Top Navigation Bar -->
+        <!-- Top Navigation Bar: Brand (Left) | Read-Only Stats (Center) | Action Controls (Right) -->
         <header class="app-header">
-            <div class="header-main-row">
+            <div class="header-left">
                 <div class="brand">
-                    <span class="brand-icon">⚡️</span>
+                    <svg class="brand-bolt" viewBox="0 0 24 24" aria-hidden="true">
+                        <polygon points="13 2 4 14 12 14 11 22 20 10 12 10 13 2" />
+                    </svg>
                     <span class="brand-name">Rebus Blitz</span>
-                </div>
-
-                <div class="header-controls">
-                    <button id="theme-toggle-btn" class="btn-icon-toggle" aria-label="Toggle theme" title="Toggle between Soft Dark & Editorial Sand">
-                        <span id="theme-icon" class="theme-icon">☀️</span>
-                    </button>
-                    <button id="open-drawer-btn" class="btn-drawer" aria-label="Open puzzle creation drawer">
-                        <span class="btn-drawer-icon">💡</span>
-                        <span class="btn-drawer-label">+ Submit Rebus</span>
-                    </button>
                 </div>
             </div>
 
-            <div class="header-stats-row">
-                <div class="stat-chip high-score-chip" title="All-time personal best">
-                    <span class="stat-icon">🏆</span>
-                    <span class="stat-title">Best</span>
-                    <span id="high-score" class="stat-val">0</span>
+            <div class="header-center">
+                <div class="stat-badge high-score-badge" title="All-time personal best">
+                    <svg class="ui-icon icon-trophy" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
+                        <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+                        <path d="M4 22h16"/>
+                        <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
+                        <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
+                        <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+                    </svg>
+                    <span class="stat-label">Best</span>
+                    <span id="high-score" class="stat-num">0</span>
                 </div>
-                <div class="stat-chip current-score-chip" title="Current session score">
-                    <span class="stat-icon">⭐</span>
-                    <span class="stat-title">Score</span>
-                    <span id="score" class="stat-val">0</span>
+
+                <div class="stat-badge current-score-badge" title="Current session score">
+                    <svg class="ui-icon icon-star" viewBox="0 0 24 24" aria-hidden="true">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                    </svg>
+                    <span class="stat-label">Score</span>
+                    <span id="score" class="stat-num">0</span>
                 </div>
+            </div>
+
+            <div class="header-right">
+                <button id="open-drawer-btn" class="btn-action-primary" aria-label="Submit a new rebus">
+                    <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <span class="btn-text">Submit Rebus</span>
+                </button>
+
+                <button id="theme-toggle-btn" class="btn-action-icon" aria-label="Toggle theme" title="Toggle Light / Dark mode">
+                    <span id="theme-icon-container">
+                        <!-- Injected via app.js -->
+                    </span>
+                </button>
             </div>
         </header>
 
-        <!-- Main Centered Game Stage -->
-        <main class="game-stage">
+        <!-- Main Immersive Canvas Area (Cardless Stage) -->
+        <main class="immersive-stage">
             <!-- 1. Start / Ready Screen -->
-            <section id="start-screen" class="card-stage screen-active">
+            <section id="start-screen" class="canvas-screen screen-active">
                 <div class="start-hero">
-                    <div class="hero-badge">🎯</div>
+                    <div class="hero-icon-wrapper">
+                        <svg class="hero-bolt" viewBox="0 0 24 24" aria-hidden="true">
+                            <polygon points="13 2 4 14 12 14 11 22 20 10 12 10 13 2" />
+                        </svg>
+                    </div>
                     <h1 class="hero-title">Rebus Blitz</h1>
-                    <p class="hero-subtitle">Solve as many rebus puzzles as you can before the 30-second clock expires!</p>
+                    <p class="hero-subtitle">Decode as many visual clues as you can before the 30-second countdown runs out!</p>
                 </div>
 
                 <div class="rules-container">
                     <div class="rule-card">
-                        <span class="rule-emoji">⏱️</span>
+                        <div class="rule-icon-box">
+                            <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                <circle cx="12" cy="12" r="10"/>
+                                <polyline points="12 6 12 12 16 14"/>
+                            </svg>
+                        </div>
                         <div class="rule-details">
                             <strong>30s Countdown</strong>
                             <span>Resets back to 30s every time you guess correctly</span>
                         </div>
                     </div>
+
                     <div class="rule-card">
-                        <span class="rule-emoji">⚡️</span>
+                        <div class="rule-icon-box">
+                            <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                <polygon points="13 2 4 14 12 14 11 22 20 10 12 10 13 2" fill="currentColor" stroke="none" />
+                            </svg>
+                        </div>
                         <div class="rule-details">
                             <strong>+100 Points</strong>
-                            <span>Stack points and build up your winning streak</span>
+                            <span>Rack up points and build a consecutive winning streak</span>
                         </div>
                     </div>
+
                     <div class="rule-card">
-                        <span class="rule-emoji">⚠️</span>
+                        <div class="rule-icon-box">
+                            <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+                                <line x1="12" y1="9" x2="12" y2="13"/>
+                                <line x1="12" y1="17" x2="12.01" y2="17"/>
+                            </svg>
+                        </div>
                         <div class="rule-details">
                             <strong>-5s Penalty</strong>
-                            <span>Incorrect guesses deduct seconds from your timer</span>
+                            <span>Incorrect guesses or skips deduct seconds from the clock</span>
                         </div>
                     </div>
                 </div>
 
                 <button id="start-game-btn" class="btn-primary btn-start">
                     <span>Start Blitz</span>
-                    <span class="btn-start-icon">▶</span>
+                    <svg class="ui-icon icon-arrow" viewBox="0 0 24 24" aria-hidden="true">
+                        <polygon points="5 3 19 12 5 21 5 3" />
+                    </svg>
                 </button>
             </section>
 
-            <!-- 2. Active Game Panel Screen -->
-            <section id="game-panel" class="card-stage" style="display: none;">
-                <!-- Game Status HUD -->
+            <!-- 2. Active Gameplay Screen (Cardless Canvas with Floating Rebus Stage) -->
+            <section id="game-panel" class="canvas-screen" style="display: none;">
+                <!-- Floating Game Status HUD -->
                 <div class="game-hud">
                     <div class="hud-chip puzzle-counter-chip">
                         <span class="hud-dot"></span>
@@ -99,19 +141,24 @@
                     </div>
 
                     <div id="timer-pill" class="hud-chip timer-chip">
-                        <span class="timer-symbol">⏱️</span>
+                        <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">
+                            <circle cx="12" cy="12" r="10"/>
+                            <polyline points="12 6 12 12 16 14"/>
+                        </svg>
                         <span id="timer" class="timer-digits">30</span>
                         <span class="timer-unit">s</span>
                     </div>
 
                     <div id="streak-pill" class="hud-chip streak-chip">
-                        <span class="streak-icon">🔥</span>
+                        <svg class="ui-icon icon-flame" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
+                        </svg>
                         <span id="streak-count" class="streak-val">0</span>
                     </div>
                 </div>
 
-                <!-- Puzzle Display Section -->
-                <div class="puzzle-display-box" id="puzzle-box">
+                <!-- Floating Rebus Clue Card (The only card on screen) -->
+                <div class="rebus-clue-card" id="puzzle-box">
                     <div id="puzzle" class="puzzle-emoji">🌊🏄‍♂️</div>
                     <div class="hint-pill">
                         <span class="hint-tag">HINT</span>
@@ -119,13 +166,13 @@
                     </div>
                 </div>
 
-                <!-- Answer Form -->
+                <!-- Sleek Minimalist Input Form -->
                 <form id="answer-form" class="answer-form" autocomplete="off">
                     <div class="input-group">
                         <input 
                             type="text" 
                             id="answer-input" 
-                            placeholder="Type your guess..." 
+                            placeholder="Type your answer..." 
                             autocomplete="off" 
                             spellcheck="false" 
                             autocapitalize="off"
@@ -154,19 +201,27 @@
         </footer>
     </div>
 
-    <!-- Side Drawer: Submit Your Own Rebus -->
+    <!-- Slide-out Drawer: Submit Rebus with Aliases Support -->
     <div id="drawer-backdrop" class="drawer-backdrop" aria-hidden="true"></div>
     <aside id="submit-drawer" class="submit-drawer" aria-hidden="true" role="dialog" aria-labelledby="drawer-title">
         <div class="drawer-header">
             <div class="drawer-header-left">
-                <span class="drawer-header-icon">💡</span>
+                <svg class="ui-icon drawer-plus-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
                 <h2 id="drawer-title">Create a Rebus</h2>
             </div>
-            <button id="close-drawer-btn" class="btn-drawer-close" aria-label="Close drawer">✕</button>
+            <button id="close-drawer-btn" class="btn-drawer-close" aria-label="Close drawer">
+                <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
         </div>
 
         <div class="drawer-content">
-            <p class="drawer-subtitle">Invent a clever rebus puzzle! It will be added to your game rotation immediately.</p>
+            <p class="drawer-subtitle">Invent a clever rebus riddle! It will be immediately added to your active deck rotation.</p>
 
             <form id="submit-form" class="submit-form" autocomplete="off">
                 <div class="form-field">
@@ -176,9 +231,15 @@
                 </div>
 
                 <div class="form-field">
-                    <label for="answer-input-submit">Answer</label>
+                    <label for="answer-input-submit">Primary Answer</label>
                     <input type="text" id="answer-input-submit" placeholder="e.g. movie night" required>
-                    <span class="field-help">The correct phrase or word</span>
+                    <span class="field-help">The main intended solution</span>
+                </div>
+
+                <div class="form-field">
+                    <label for="aliases-input">Acceptable Aliases (Optional)</label>
+                    <input type="text" id="aliases-input" placeholder="e.g. movie time, movies, cinema">
+                    <span class="field-help">Comma-separated alternative variations so guesses aren't unfairly marked wrong</span>
                 </div>
 
                 <div class="form-field">
@@ -205,13 +266,18 @@
         </div>
     </aside>
 
-    <!-- Game Over Centered Modal with Missed Answers Review -->
+    <!-- Game Over / Victory Modal with Missed Answers Review -->
     <div id="game-over-modal" class="modal-overlay" aria-hidden="true" style="display: none;">
         <div class="modal-card">
             <div class="modal-header">
-                <div class="modal-icon-badge">⏰</div>
-                <h2 class="modal-title">Time's Up!</h2>
-                <p class="modal-subtitle">Blitz round complete! Check your stats below:</p>
+                <div id="modal-icon-badge" class="modal-icon-badge">
+                    <svg id="modal-header-icon" class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                </div>
+                <h2 id="modal-title" class="modal-title">Time's Up!</h2>
+                <p id="modal-subtitle" class="modal-subtitle">Blitz round complete! Check your stats below:</p>
             </div>
 
             <div class="modal-stats">
@@ -219,7 +285,7 @@
                     <span class="stat-highlight-label">Final Score</span>
                     <span id="final-score" class="stat-highlight-val">0</span>
                     <div id="new-high-score-tag" class="high-score-tag" style="display: none;">
-                        🎉 New Personal Best!
+                        New Personal Best!
                     </div>
                 </div>
 
@@ -248,10 +314,10 @@
 
             <div class="modal-actions">
                 <button id="restart-button" class="btn-primary btn-full btn-restart">
-                    <span>Play Again 🔄</span>
+                    <span>Play Again</span>
                 </button>
                 <button id="drawer-from-modal-btn" class="btn-secondary btn-full">
-                    <span>💡 Submit a New Rebus</span>
+                    <span>Submit a New Rebus</span>
                 </button>
             </div>
         </div>

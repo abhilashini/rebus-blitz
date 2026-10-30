@@ -1,8 +1,17 @@
 /**
  * Rebus Blitz - Core Game Engine
- * Fast-paced rebus puzzle game with themed styling, zero duplicate runs,
- * alias-aware answer matching, and transparent post-game answer review.
+ * Clean, cardless canvas layout, alias-aware answer matching,
+ * deck completion victory condition, and transparent post-game review.
  */
+
+// SVG Icon Helpers
+const ICONS = {
+  sun: `<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>`,
+  moon: `<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>`,
+  clock: `<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
+  trophy: `<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>`,
+  star: `<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`
+};
 
 // Curated Master Puzzle Deck with Generous Aliases
 const DEFAULT_PUZZLES = [
@@ -97,7 +106,7 @@ class RebusBlitzApp {
     this.deckIndex = 0;
     this.currentPuzzle = null;
     this.currentLastGuess = '';
-    this.missedPuzzles = []; // Array of { puzzle, userGuess, reason }
+    this.missedPuzzles = [];
     this.score = 0;
     this.puzzlesSolved = 0;
     this.currentStreak = 0;
@@ -108,7 +117,7 @@ class RebusBlitzApp {
     this.isPausedForDrawer = false;
     this.feedbackTimeout = null;
 
-    // Theme: 'dark' (Soft Cosmic) or 'light' (Editorial Sand)
+    // Theme: 'dark' (Soft Oceanic) or 'light' (Playful Porcelain)
     this.theme = localStorage.getItem('rebus_blitz_theme') || 'dark';
 
     // Persistence
@@ -120,8 +129,8 @@ class RebusBlitzApp {
   }
 
   init() {
-    this.applyTheme(this.theme);
     this.cacheDom();
+    this.applyTheme(this.theme);
     this.bindEvents();
     this.updateHighScoreDisplay();
     this.setupDrawerPreview();
@@ -132,12 +141,12 @@ class RebusBlitzApp {
     this.dom = {
       // Theme
       themeToggleBtn: document.getElementById('theme-toggle-btn'),
-      themeIcon: document.getElementById('theme-icon'),
+      themeIconContainer: document.getElementById('theme-icon-container'),
 
       // Header
       highScore: document.getElementById('high-score'),
       score: document.getElementById('score'),
-      scoreChip: document.querySelector('.current-score-chip'),
+      scoreChip: document.querySelector('.current-score-badge'),
       openDrawerBtn: document.getElementById('open-drawer-btn'),
 
       // Screens
@@ -166,6 +175,7 @@ class RebusBlitzApp {
       submitForm: document.getElementById('submit-form'),
       emojiInput: document.getElementById('emoji-input'),
       answerInputSubmit: document.getElementById('answer-input-submit'),
+      aliasesInput: document.getElementById('aliases-input'),
       hintInput: document.getElementById('hint-input'),
       previewEmoji: document.getElementById('preview-emoji'),
       previewHint: document.getElementById('preview-hint'),
@@ -173,6 +183,9 @@ class RebusBlitzApp {
 
       // Modal Elements
       gameOverModal: document.getElementById('game-over-modal'),
+      modalIconBadge: document.getElementById('modal-icon-badge'),
+      modalTitle: document.getElementById('modal-title'),
+      modalSubtitle: document.getElementById('modal-subtitle'),
       finalScore: document.getElementById('final-score'),
       newHighScoreTag: document.getElementById('new-high-score-tag'),
       puzzlesSolved: document.getElementById('puzzles-solved'),
@@ -243,9 +256,10 @@ class RebusBlitzApp {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('rebus_blitz_theme', theme);
 
-    if (this.dom.themeIcon) {
-      this.dom.themeIcon.textContent = theme === 'dark' ? '☀️' : '🌙';
-      this.dom.themeToggleBtn.setAttribute('title', theme === 'dark' ? 'Switch to Editorial Sand' : 'Switch to Soft Dark');
+    if (this.dom.themeIconContainer) {
+      // In dark mode, show Sun icon to switch to light. In light mode, show Moon icon.
+      this.dom.themeIconContainer.innerHTML = theme === 'dark' ? ICONS.sun : ICONS.moon;
+      this.dom.themeToggleBtn.setAttribute('title', theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode');
     }
   }
 
@@ -295,10 +309,10 @@ class RebusBlitzApp {
   }
 
   loadCurrentPuzzle() {
+    // End Condition: Check if all puzzles in the active deck have been answered!
     if (this.deckIndex >= this.activeDeck.length) {
-      // Reshuffle for endless play once full deck exhausted
-      this.activeDeck = shuffleArray([...DEFAULT_PUZZLES, ...this.customPuzzles]);
-      this.deckIndex = 0;
+      this.triggerDeckCompleted();
+      return;
     }
 
     this.currentPuzzle = this.activeDeck[this.deckIndex];
@@ -310,7 +324,7 @@ class RebusBlitzApp {
     setTimeout(() => {
       this.dom.puzzleEmoji.textContent = this.currentPuzzle.emoji;
       this.dom.puzzleHint.textContent = this.currentPuzzle.hint;
-      this.dom.puzzleProgress.textContent = `Puzzle ${this.puzzlesSolved + 1}`;
+      this.dom.puzzleProgress.textContent = `Puzzle ${this.deckIndex + 1} of ${this.activeDeck.length}`;
 
       this.dom.puzzleEmoji.classList.remove('puzzle-switch');
       this.dom.puzzleEmoji.classList.add('puzzle-enter');
@@ -334,10 +348,8 @@ class RebusBlitzApp {
     this.currentLastGuess = guess;
 
     if (isAnswerMatch(guess, this.currentPuzzle)) {
-      // Correct!
       this.onCorrectAnswer();
     } else {
-      // Wrong!
       this.onIncorrectAnswer(guess);
     }
   }
@@ -358,7 +370,7 @@ class RebusBlitzApp {
     // Update UI
     this.updateScoreDisplay(this.score, true);
     this.updateStreakDisplay();
-    this.showFeedback(`+${this.CORRECT_BONUS}! Timer Reset ⚡️`, 'success');
+    this.showFeedback(`+${this.CORRECT_BONUS}! Timer Reset`, 'success');
 
     // Advance puzzle
     this.deckIndex++;
@@ -474,8 +486,42 @@ class RebusBlitzApp {
   }
 
   // ==========================================================================
-  // Game Over Handling & Missed Puzzles Review
+  // Game End Conditions (Time Out vs Deck Completed Victory)
   // ==========================================================================
+
+  triggerDeckCompleted() {
+    this.isPlaying = false;
+    this.stopTimer();
+
+    // Time bonus for finishing early!
+    const timeBonus = this.timeRemaining * 10;
+    this.score += timeBonus;
+
+    // Check high score
+    const isNewHigh = this.score > this.highScore;
+    if (isNewHigh) {
+      this.highScore = this.score;
+      localStorage.setItem('rebus_blitz_high_score', this.highScore.toString());
+      this.updateHighScoreDisplay();
+    }
+
+    // Modal Header: Victory Theme
+    this.dom.modalIconBadge.className = 'modal-icon-badge victory-mode';
+    this.dom.modalIconBadge.innerHTML = ICONS.trophy;
+    this.dom.modalTitle.textContent = 'All Puzzles Solved!';
+    this.dom.modalSubtitle.textContent = `Incredible run! You cleared the entire deck with ${this.timeRemaining}s left (+${timeBonus}s bonus)!`;
+
+    // Populate modal stats
+    this.dom.finalScore.textContent = this.score;
+    this.dom.puzzlesSolved.textContent = this.puzzlesSolved;
+    this.dom.bestStreakDisplay.textContent = this.bestStreak;
+    this.dom.newHighScoreTag.style.display = isNewHigh && this.score > 0 ? 'inline-block' : 'none';
+
+    // Missed puzzles
+    this.renderMissedPuzzles();
+
+    this.openModal();
+  }
 
   triggerGameOver() {
     this.isPlaying = false;
@@ -489,16 +535,21 @@ class RebusBlitzApp {
       this.updateHighScoreDisplay();
     }
 
+    // Modal Header: Time Out Theme
+    this.dom.modalIconBadge.className = 'modal-icon-badge';
+    this.dom.modalIconBadge.innerHTML = ICONS.clock;
+    this.dom.modalTitle.textContent = "Time's Up!";
+    this.dom.modalSubtitle.textContent = 'Blitz round complete! Check your stats below:';
+
     // Populate modal stats
     this.dom.finalScore.textContent = this.score;
     this.dom.puzzlesSolved.textContent = this.puzzlesSolved;
     this.dom.bestStreakDisplay.textContent = this.bestStreak;
     this.dom.newHighScoreTag.style.display = isNewHigh && this.score > 0 ? 'inline-block' : 'none';
 
-    // Populate Missed Puzzles List (Transparency / Review)
+    // Populate Missed Puzzles List
     this.renderMissedPuzzles();
 
-    // Show modal (properly centered)
     this.openModal();
   }
 
@@ -529,7 +580,7 @@ class RebusBlitzApp {
             <div class="missed-card-answer">
               ${item.answer} ${aliasHint}
             </div>
-            <div class="missed-card-hint">💡 ${item.hint}</div>
+            <div class="missed-card-hint">${item.hint}</div>
             <div class="missed-card-user">Your guess: ${userGuessMarkup}</div>
           </div>
         </div>
@@ -554,7 +605,7 @@ class RebusBlitzApp {
   }
 
   // ==========================================================================
-  // Drawer & Custom Puzzles
+  // Drawer & Custom Puzzles with Aliases Support
   // ==========================================================================
 
   openDrawer() {
@@ -597,6 +648,7 @@ class RebusBlitzApp {
 
     const emoji = this.dom.emojiInput.value.trim();
     const answer = this.dom.answerInputSubmit.value.trim();
+    const aliasesRaw = (this.dom.aliasesInput ? this.dom.aliasesInput.value : '').trim();
     const hint = this.dom.hintInput.value.trim();
 
     // Validation
@@ -615,12 +667,17 @@ class RebusBlitzApp {
       return;
     }
 
+    // Parse aliases list
+    const aliases = aliasesRaw
+      ? aliasesRaw.split(',').map(s => s.trim().toLowerCase()).filter(Boolean)
+      : [];
+
     // Create puzzle
     const newPuzzle = {
       id: 'custom_' + Date.now(),
       emoji,
       answer,
-      aliases: [],
+      aliases,
       hint,
       isCustom: true
     };
@@ -635,7 +692,7 @@ class RebusBlitzApp {
     }
 
     // Success feedback
-    this.showSubmitFeedback('🎉 Rebus added! It is now in the rotation.', 'success');
+    this.showSubmitFeedback('Rebus added! It is now in the active rotation.', 'success');
     this.dom.submitForm.reset();
     this.dom.previewEmoji.textContent = '🍿🎬';
     this.dom.previewHint.textContent = 'Cinema screening with snacks';
