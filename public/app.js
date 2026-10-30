@@ -16,7 +16,7 @@ const ICONS = {
 // Curated Master Puzzle Deck with Generous Aliases
 const DEFAULT_PUZZLES = [
   { id: 'p1', emoji: '🌊🏄‍♂️', answer: 'surfing', aliases: ['surf', 'surfer'], hint: 'Riding ocean waves on a board' },
-  { id: 'p2', emoji: '🐝📄', answer: 'beeline', aliases: ['bee line'], hint: 'The most direct and shortest route' },
+  { id: 'p2', emoji: '🐝+n', answer: 'been', aliases: ['Been'], hint: 'Past participle of bee' },
   { id: 'p3', emoji: '👁️💭', answer: 'idea', aliases: ['thought', 'concept'], hint: 'A sudden spark of inspiration' },
   { id: 'p4', emoji: '🕷️🦸‍♂️', answer: 'spiderman', aliases: ['spider man', 'spider-man'], hint: 'Friendly neighborhood wall-crawler' },
   { id: 'p5', emoji: '🧠💥', answer: 'brainstorm', aliases: ['brain storm'], hint: 'Group creativity session generating ideas' },
@@ -195,6 +195,8 @@ class RebusBlitzApp {
       missedCountTag: document.getElementById('missed-count-tag'),
       missedList: document.getElementById('missed-list'),
       restartBtn: document.getElementById('restart-button'),
+      shareBtn: document.getElementById('share-score-btn'),
+      shareBtnText: document.getElementById('share-btn-text'),
       drawerFromModalBtn: document.getElementById('drawer-from-modal-btn'),
     };
   }
@@ -232,6 +234,10 @@ class RebusBlitzApp {
       this.closeModal();
       this.startNewGame();
     });
+
+    if (this.dom.shareBtn) {
+      this.dom.shareBtn.addEventListener('click', () => this.handleShareScore());
+    }
 
     this.dom.drawerFromModalBtn.addEventListener('click', () => {
       this.closeModal();
@@ -566,8 +572,8 @@ class RebusBlitzApp {
     this.dom.missedCountTag.textContent = this.missedPuzzles.length;
 
     this.dom.missedList.innerHTML = this.missedPuzzles.map(item => {
-      const aliasHint = item.aliases && item.aliases.length > 0 
-        ? `<span class="alt-hint">(also: ${item.aliases.slice(0, 2).join(', ')})</span>` 
+      const aliasHint = item.aliases && item.aliases.length > 0
+        ? `<span class="alt-hint">(also: ${item.aliases.slice(0, 2).join(', ')})</span>`
         : '';
 
       const userGuessMarkup = item.userGuess && item.userGuess !== '(No guess)' && item.userGuess !== '(Skipped)' && item.userGuess !== '(Time expired)'
@@ -595,6 +601,29 @@ class RebusBlitzApp {
     this.dom.gameOverModal.classList.add('active');
     this.dom.gameOverModal.setAttribute('aria-hidden', 'false');
     this.dom.restartBtn.focus();
+  }
+
+  handleShareScore() {
+    const shareText = `⚡ Rebus Blitz\nScore: ${this.score.toLocaleString()} pts | Solved: ${this.puzzlesSolved} | Streak: ${this.bestStreak} 🔥\nCan you beat my blitz run?\nhttps://rebus-blitz.vercel.app/`;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(shareText).then(() => {
+        if (this.dom.shareBtnText) {
+          const oldText = this.dom.shareBtnText.textContent;
+          this.dom.shareBtnText.textContent = 'Copied to Clipboard! ✓';
+          setTimeout(() => {
+            if (this.dom.shareBtnText) {
+              this.dom.shareBtnText.textContent = oldText;
+            }
+          }, 2000);
+        }
+      }).catch(() => {
+        // Fallback
+        prompt('Copy your blitz score brag:', shareText);
+      });
+    } else {
+      prompt('Copy your blitz score brag:', shareText);
+    }
   }
 
   closeModal() {

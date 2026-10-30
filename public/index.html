@@ -3,8 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Rebus Blitz</title>
-    <meta name="description" content="Fast-paced rebus puzzle game. Decode the clues before the clock expires!">
+    <title>Rebus Blitz — Fast-Paced Visual Riddle & Word Game</title>
+    <meta name="description" content="Play Rebus Blitz, the fast-paced 30-second visual puzzle game. Decode clever emoji rebuses, build your winning streak, review answers, and submit your own riddles!">
+    <meta name="keywords" content="rebus, rebus puzzle, emoji rebus, word game, brain teaser, visual riddle, fast-paced puzzle, wordle alternative">
+    <meta name="author" content="Rebus Blitz">
+    <link rel="canonical" href="https://emoji-rebus-blitz-game.vercel.app/">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://emoji-rebus-blitz-game.vercel.app/">
+    <meta property="og:title" content="Rebus Blitz — Fast-Paced Visual Riddle Game">
+    <meta property="og:description" content="Decode visual emoji rebuses before the 30-second clock runs out. Play free, track streaks, and invent your own riddles!">
+    <meta property="og:image" content="https://emoji-rebus-blitz-game.vercel.app/favicon.svg">
+    <meta property="og:site_name" content="Rebus Blitz">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:url" content="https://emoji-rebus-blitz-game.vercel.app/">
+    <meta name="twitter:title" content="Rebus Blitz — Fast-Paced Visual Riddle Game">
+    <meta name="twitter:description" content="Decode visual emoji rebuses before the 30-second clock runs out. Play free with no ads!">
+    <meta name="twitter:image" content="https://emoji-rebus-blitz-game.vercel.app/favicon.svg">
+
+    <!-- Schema.org Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Rebus Blitz",
+      "url": "https://emoji-rebus-blitz-game.vercel.app/",
+      "applicationCategory": "GameApplication",
+      "genre": "Puzzle",
+      "operatingSystem": "Any",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "description": "Fast-paced visual rebus puzzle game. Decode clever emoji clues before the 30-second countdown runs out."
+    }
+    </script>
+
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -80,6 +118,25 @@
                     </div>
                     <h1 class="hero-title">Rebus Blitz</h1>
                     <p class="hero-subtitle">Decode as many visual clues as you can before the 30-second countdown runs out!</p>
+                </div>
+
+                <!-- Brief Rebus Concept Explainer with Non-Obvious Example -->
+                <div class="rebus-explainer-card">
+                    <div class="explainer-header">
+                        <span class="explainer-badge">HOW IT WORKS</span>
+                        <span class="explainer-heading">What is a Rebus?</span>
+                    </div>
+                    <p class="explainer-desc">
+                        A rebus combines pictures, symbols, or phonetic wordplay to spell out a well-known word, idiom, or pop culture phrase.
+                    </p>
+                    <div class="explainer-demo">
+                        <div class="demo-rebus">🐝📄</div>
+                        <div class="demo-arrow">→</div>
+                        <div class="demo-solution">
+                            <span class="demo-word">"beeline"</span>
+                            <span class="demo-breakdown">Bee + Lined paper = the shortest route</span>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="rules-container">
@@ -315,6 +372,14 @@
             <div class="modal-actions">
                 <button id="restart-button" class="btn-primary btn-full btn-restart">
                     <span>Play Again</span>
+                </button>
+                <button id="share-score-btn" class="btn-secondary btn-full btn-share" title="Copy score brag to clipboard">
+                    <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+                        <polyline points="16 6 12 2 8 6"/>
+                        <line x1="12" y1="2" x2="12" y2="15"/>
+                    </svg>
+                    <span id="share-btn-text">Share Score</span>
                 </button>
                 <button id="drawer-from-modal-btn" class="btn-secondary btn-full">
                     <span>Submit a New Rebus</span>
