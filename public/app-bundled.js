@@ -1,479 +1,715 @@
 /**
- * Emoji Rebus Blitz - Bundled Frontend Version
- * Includes all game logic for standalone testing
+ * Rebus Blitz - Core Game Engine
+ * Fast-paced rebus puzzle game with themed styling, zero duplicate runs,
+ * alias-aware answer matching, and transparent post-game answer review.
  */
 
-// Game configuration
-const CONFIG = {
-  initialTime: 30,
-  correctBonus: 100,
-  incorrectPenalty: 5,
-};
+// Curated Master Puzzle Deck with Generous Aliases
+const DEFAULT_PUZZLES = [
+  { id: 'p1', emoji: '🌊🏄‍♂️', answer: 'surfing', aliases: ['surf', 'surfer'], hint: 'Riding ocean waves on a board' },
+  { id: 'p2', emoji: '🐝📄', answer: 'beeline', aliases: ['bee line'], hint: 'The most direct and shortest route' },
+  { id: 'p3', emoji: '👁️💭', answer: 'idea', aliases: ['thought', 'concept'], hint: 'A sudden spark of inspiration' },
+  { id: 'p4', emoji: '🕷️🦸‍♂️', answer: 'spiderman', aliases: ['spider man', 'spider-man'], hint: 'Friendly neighborhood wall-crawler' },
+  { id: 'p5', emoji: '🧠💥', answer: 'brainstorm', aliases: ['brain storm'], hint: 'Group creativity session generating ideas' },
+  { id: 'p6', emoji: '⌚🐕', answer: 'watchdog', aliases: ['watch dog'], hint: 'Canine guardian or oversight agency' },
+  { id: 'p7', emoji: '🌧️🐱🐶', answer: 'raining cats and dogs', aliases: ['cats and dogs', 'rain cats and dogs'], hint: 'Very heavy torrential rainfall' },
+  { id: 'p8', emoji: '🐝🍯', answer: 'honey', aliases: ['honeybee', 'honey bee'], hint: 'Golden sweet substance made by bees' },
+  { id: 'p9', emoji: '🔥📦', answer: 'hotbox', aliases: ['hot box'], hint: 'Enclosed space that becomes very warm' },
+  { id: 'p10', emoji: '👻👻', answer: 'double trouble', aliases: ['twin trouble'], hint: 'Twice the mischief and difficulty' },
+  { id: 'p11', emoji: '🍎📱', answer: 'iphone', aliases: ['apple phone', 'i phone', 'smartphone'], hint: 'Apple\'s flagship touchscreen smartphone' },
+  { id: 'p12', emoji: '👑❤️', answer: 'heart of gold', aliases: ['queen of hearts', 'king of hearts'], hint: 'Someone genuinely kind and altruistic' },
+  { id: 'p13', emoji: '🧊🔥', answer: 'fire and ice', aliases: ['ice and fire', 'ice fire', 'fire ice'], hint: 'Two contradictory natural elements' },
+  { id: 'p14', emoji: '🐱🎻', answer: 'cat got your tongue', aliases: ['cat got tongue', 'cat has your tongue'], hint: 'Completely speechless or at a loss for words' },
+  { id: 'p15', emoji: '☕️🥐', answer: 'breakfast', aliases: ['coffee break', 'morning coffee'], hint: 'The morning meal to start your day' },
+  { id: 'p16', emoji: '🍿🎬', answer: 'movie night', aliases: ['movie time', 'movies', 'movie', 'cinema'], hint: 'Cinema screening accompanied by snacks' },
+  { id: 'p17', emoji: '🌙🚶‍♂️', answer: 'moonwalk', aliases: ['moon walk'], hint: 'Michael Jackson\'s iconic gliding dance move' },
+  { id: 'p18', emoji: '🥪🥪', answer: 'sandwich', aliases: ['sandwiches'], hint: 'Filling layered between slices of bread' },
+  { id: 'p19', emoji: '☀️🕶️', answer: 'sunglasses', aliases: ['sun glasses', 'shades'], hint: 'Tinted shades worn to shield against glare' },
+  { id: 'p20', emoji: '🚀🧑‍🚀', answer: 'astronaut', aliases: ['space walk', 'spaceman', 'space explorer'], hint: 'Space explorer venturing past Earth' },
+  { id: 'p21', emoji: '🍕🎉', answer: 'pizza party', aliases: ['pizza night'], hint: 'Casual celebratory gathering with slices' },
+  { id: 'p22', emoji: '🦋🥖', answer: 'butterfly', aliases: ['butter fly'], hint: 'Insect that emerged from a cocoon' },
+  { id: 'p23', emoji: '🏀⛹️‍♂️', answer: 'basketball', aliases: ['basket ball'], hint: 'Fast-paced court sport shooting hoops' },
+  { id: 'p24', emoji: '📚🐛', answer: 'bookworm', aliases: ['book worm'], hint: 'An avid and passionate reader' },
+  { id: 'p25', emoji: '🧊🍦', answer: 'ice cream', aliases: ['icecream'], hint: 'Frozen dairy dessert in a cone' },
+  { id: 'p26', emoji: '🥊🥊', answer: 'fight club', aliases: ['boxing', 'fight'], hint: 'First rule: you do not talk about it' },
+  { id: 'p27', emoji: '🏎️💨', answer: 'fast and furious', aliases: ['fast furious', 'fast & furious'], hint: 'High-octane car action franchise' },
+  { id: 'p28', emoji: '🦁👑', answer: 'lion king', aliases: ['the lion king'], hint: 'Disney classic starring Simba and Mufasa' },
+  { id: 'p29', emoji: '🦇👨', answer: 'batman', aliases: ['bat man'], hint: 'The Caped Crusader protecting Gotham' },
+  { id: 'p30', emoji: '🧁🎂', answer: 'sweet tooth', aliases: ['sugar rush', 'sweets'], hint: 'A strong craving for sugary delights' },
+  { id: 'p31', emoji: '🌍☮️', answer: 'world peace', aliases: ['peace'], hint: 'Universal tranquility and cooperation' },
+  { id: 'p32', emoji: '💎💍', answer: 'diamond ring', aliases: ['wedding ring', 'ring'], hint: 'Sparkling engagement jewelry on a finger' },
+  { id: 'p33', emoji: '🔑🚪', answer: 'open door', aliases: ['key to success', 'door', 'unlocked'], hint: 'A welcoming opportunity or passage' },
+  { id: 'p34', emoji: '🌈🦄', answer: 'rainbow', aliases: ['unicorn'], hint: 'Prismatic arc of color in the sky' },
+  { id: 'p35', emoji: '🏹🎯', answer: 'bullseye', aliases: ['bulls eye', 'target', 'direct hit'], hint: 'Dead center of a target' }
+];
 
-// Utility functions
-function normalizeAnswer(answer) {
-  if (typeof answer !== 'string') return '';
-  return answer
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, '')
-    .trim()
-    .replace(/\s+/g, ' ');
+// Utility: Normalize string for forgiving yet accurate matching
+function cleanString(str) {
+  if (!str || typeof str !== 'string') return '';
+  return str.toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
-function compareAnswers(playerAnswer, correctAnswer) {
-  return normalizeAnswer(playerAnswer) === normalizeAnswer(correctAnswer);
+// Compare guess against primary answer and all valid aliases
+function isAnswerMatch(guess, puzzle) {
+  const cleanedGuess = cleanString(guess);
+  if (!cleanedGuess) return false;
+
+  if (cleanedGuess === cleanString(puzzle.answer)) return true;
+
+  if (Array.isArray(puzzle.aliases)) {
+    return puzzle.aliases.some(alias => cleanString(alias) === cleanedGuess);
+  }
+
+  return false;
 }
 
-// Simple Timer Manager
-class TimerManager {
-  constructor(durationSeconds, callbacks = {}) {
-    this.durationSeconds = durationSeconds;
-    this.remainingSeconds = durationSeconds;
-    this.startTime = null;
-    this.isRunning = false;
-    this.timerId = null;
-    this.onTick = callbacks.onTick || (() => {});
-    this.onComplete = callbacks.onComplete || (() => {});
-  }
-
-  start() {
-    if (this.isRunning) return;
-    this.isRunning = true;
-    this.startTime = Date.now();
-    this.tick();
-  }
-
-  tick() {
-    if (!this.isRunning) return;
-    
-    const elapsed = (Date.now() - this.startTime) / 1000;
-    const remaining = Math.max(0, this.durationSeconds - elapsed);
-    const remainingInt = Math.floor(remaining);
-    
-    if (remainingInt !== this.remainingSeconds) {
-      this.remainingSeconds = remainingInt;
-      this.onTick(this.remainingSeconds);
-    }
-    
-    if (remaining <= 0) {
-      this.complete();
-      return;
-    }
-    
-    this.timerId = setTimeout(() => this.tick(), 100);
-  }
-
-  complete() {
-    this.isRunning = false;
-    this.remainingSeconds = 0;
-    if (this.timerId) clearTimeout(this.timerId);
-    this.onTick(0);
-    this.onComplete();
-  }
-
-  stop() {
-    this.isRunning = false;
-    if (this.timerId) clearTimeout(this.timerId);
-  }
-
-  reset() {
-    this.stop();
-    this.remainingSeconds = this.durationSeconds;
-    this.onTick(this.remainingSeconds);
-  }
-
-  addTime(seconds) {
-    const newTime = this.remainingSeconds + seconds;
-    this.remainingSeconds = Math.max(0, newTime);
-    this.onTick(this.remainingSeconds);
-    
-    if (this.remainingSeconds <= 0 && this.isRunning) {
-      this.complete();
-    }
+// Check if string contains at least one emoji or symbol
+function hasEmoji(str) {
+  if (!str) return false;
+  try {
+    const emojiRegex = /[\p{Emoji}\p{Emoji_Modifier}\p{Emoji_Component}\p{Emoji_Presentation}]/gu;
+    return emojiRegex.test(str);
+  } catch {
+    const fallbackRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu;
+    return fallbackRegex.test(str);
   }
 }
 
-// Simple Game Engine
-class GameEngine {
-  constructor(config = CONFIG) {
-    this.config = config;
-    this.state = this.createInitialState();
+// Fisher-Yates array shuffle for uniform distribution
+function shuffleArray(array) {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
-
-  createInitialState() {
-    return {
-      score: 0,
-      timeRemaining: this.config.initialTime,
-      currentPuzzle: null,
-      isGameOver: false,
-      puzzlesSolved: 0,
-      incorrectAttempts: 0,
-    };
-  }
-
-  startGame(initialPuzzle, onStateChange = null, onGameOver = null) {
-    this.state = this.createInitialState();
-    this.state.currentPuzzle = initialPuzzle;
-    this.onStateChange = onStateChange;
-    this.onGameOver = onGameOver;
-    this.notifyStateChange();
-  }
-
-  processAnswer(playerAnswer) {
-    if (this.state.isGameOver) {
-      return { isCorrect: false, scoreChange: 0, message: 'Game over!' };
-    }
-
-    if (!this.state.currentPuzzle) {
-      return { isCorrect: false, scoreChange: 0, message: 'No puzzle loaded' };
-    }
-
-    const isCorrect = compareAnswers(playerAnswer, this.state.currentPuzzle.answer);
-    
-    if (isCorrect) {
-      this.state.score += this.config.correctBonus;
-      this.state.timeRemaining = this.config.initialTime;
-      this.state.puzzlesSolved++;
-      
-      const result = {
-        isCorrect: true,
-        scoreChange: this.config.correctBonus,
-        message: `Correct! +${this.config.correctBonus} points`,
-      };
-      
-      this.notifyStateChange();
-      return result;
-      
-    } else {
-      const timePenalty = Math.min(this.state.timeRemaining, this.config.incorrectPenalty);
-      this.state.timeRemaining -= timePenalty;
-      this.state.incorrectAttempts++;
-      
-      const result = {
-        isCorrect: false,
-        scoreChange: -timePenalty,
-        message: `Incorrect! -${timePenalty} seconds`,
-      };
-      
-      if (this.state.timeRemaining <= 0) {
-        this.triggerGameOver();
-      }
-      
-      this.notifyStateChange();
-      return result;
-    }
-  }
-
-  triggerGameOver() {
-    if (this.state.isGameOver) return;
-    this.state.isGameOver = true;
-    if (this.onGameOver) this.onGameOver(this.state);
-    this.notifyStateChange();
-  }
-
-  updateTimer() {
-    if (this.state.isGameOver) return;
-    this.state.timeRemaining--;
-    if (this.state.timeRemaining <= 0) {
-      this.state.timeRemaining = 0;
-      this.triggerGameOver();
-    }
-    this.notifyStateChange();
-  }
-
-  updatePuzzle(puzzle) {
-    this.state.currentPuzzle = puzzle;
-    this.notifyStateChange();
-  }
-
-  resetGame() {
-    this.state = this.createInitialState();
-    this.notifyStateChange();
-  }
-
-  getState() {
-    return { ...this.state };
-  }
-
-  notifyStateChange() {
-    if (this.onStateChange) this.onStateChange(this.getState());
-  }
+  return shuffled;
 }
 
-// Main Application
-class EmojiRebusBlitz {
+class RebusBlitzApp {
   constructor() {
-    this.gameEngine = null;
-    this.timerManager = null;
+    // Game Configuration
+    this.INITIAL_TIME = 30;
+    this.CORRECT_BONUS = 100;
+    this.INCORRECT_PENALTY = 5;
+
+    // Runtime State
+    this.activeDeck = [];
+    this.deckIndex = 0;
     this.currentPuzzle = null;
-    this.elements = {};
+    this.currentLastGuess = '';
+    this.missedPuzzles = []; // Array of { puzzle, userGuess, reason }
+    this.score = 0;
+    this.puzzlesSolved = 0;
+    this.currentStreak = 0;
+    this.bestStreak = 0;
+    this.timeRemaining = this.INITIAL_TIME;
+    this.timerInterval = null;
+    this.isPlaying = false;
+    this.isPausedForDrawer = false;
+    this.feedbackTimeout = null;
+
+    // Theme: 'dark' (Soft Cosmic) or 'light' (Editorial Sand)
+    this.theme = localStorage.getItem('rebus_blitz_theme') || 'dark';
+
+    // Persistence
+    this.highScore = parseInt(localStorage.getItem('rebus_blitz_high_score') || localStorage.getItem('emoji_rebus_high_score') || '0', 10);
+    this.customPuzzles = this.loadCustomPuzzles();
+
+    // DOM Elements Cache
+    this.dom = {};
   }
 
-  async init() {
-    console.log('Emoji Rebus Blitz — initializing (bundled version)');
-    
-    try {
-      this.cacheElements();
-      this.setupEventListeners();
-      
-      this.gameEngine = new GameEngine();
-      this.gameEngine.onStateChange = (state) => this.onGameStateChange(state);
-      this.gameEngine.onGameOver = (state) => this.onGameOver(state);
-      
-      this.timerManager = new TimerManager(CONFIG.initialTime, {
-        onTick: (remaining) => this.onTimerTick(remaining),
-        onComplete: () => this.onTimerComplete(),
-      });
-      
-      // Use fallback puzzles for standalone version
-      this.currentPuzzle = this.getFallbackPuzzle();
-      this.startGame();
-      
-      console.log('Emoji Rebus Blitz — ready (standalone mode)');
-      
-    } catch (error) {
-      console.error('Failed to initialize:', error);
-      this.showError('Failed to initialize game');
-    }
+  init() {
+    this.applyTheme(this.theme);
+    this.cacheDom();
+    this.bindEvents();
+    this.updateHighScoreDisplay();
+    this.setupDrawerPreview();
+    console.log('Rebus Blitz initialized with', DEFAULT_PUZZLES.length + this.customPuzzles.length, 'puzzles.');
   }
 
-  cacheElements() {
-    this.elements = {
-      puzzle: document.getElementById('puzzle'),
-      hint: document.getElementById('hint'),
-      timer: document.getElementById('timer'),
+  cacheDom() {
+    this.dom = {
+      // Theme
+      themeToggleBtn: document.getElementById('theme-toggle-btn'),
+      themeIcon: document.getElementById('theme-icon'),
+
+      // Header
+      highScore: document.getElementById('high-score'),
       score: document.getElementById('score'),
+      scoreChip: document.querySelector('.current-score-chip'),
+      openDrawerBtn: document.getElementById('open-drawer-btn'),
+
+      // Screens
+      startScreen: document.getElementById('start-screen'),
+      gamePanel: document.getElementById('game-panel'),
+      startGameBtn: document.getElementById('start-game-btn'),
+
+      // Active Game Elements
+      puzzleProgress: document.getElementById('puzzle-progress'),
+      timerPill: document.getElementById('timer-pill'),
+      timer: document.getElementById('timer'),
+      streakPill: document.getElementById('streak-pill'),
+      streakCount: document.getElementById('streak-count'),
+      puzzleEmoji: document.getElementById('puzzle'),
+      puzzleHint: document.getElementById('hint'),
       answerForm: document.getElementById('answer-form'),
       answerInput: document.getElementById('answer-input'),
+      skipBtn: document.getElementById('skip-btn'),
       feedback: document.getElementById('feedback'),
+      inputGroup: document.querySelector('.input-group'),
+
+      // Drawer Elements
+      drawerBackdrop: document.getElementById('drawer-backdrop'),
+      submitDrawer: document.getElementById('submit-drawer'),
+      closeDrawerBtn: document.getElementById('close-drawer-btn'),
       submitForm: document.getElementById('submit-form'),
+      emojiInput: document.getElementById('emoji-input'),
+      answerInputSubmit: document.getElementById('answer-input-submit'),
+      hintInput: document.getElementById('hint-input'),
+      previewEmoji: document.getElementById('preview-emoji'),
+      previewHint: document.getElementById('preview-hint'),
       submitFeedback: document.getElementById('submit-feedback'),
-      gameOverScreen: null,
+
+      // Modal Elements
+      gameOverModal: document.getElementById('game-over-modal'),
+      finalScore: document.getElementById('final-score'),
+      newHighScoreTag: document.getElementById('new-high-score-tag'),
+      puzzlesSolved: document.getElementById('puzzles-solved'),
+      bestStreakDisplay: document.getElementById('best-streak'),
+      missedSection: document.getElementById('missed-section'),
+      missedCountTag: document.getElementById('missed-count-tag'),
+      missedList: document.getElementById('missed-list'),
+      restartBtn: document.getElementById('restart-button'),
+      drawerFromModalBtn: document.getElementById('drawer-from-modal-btn'),
     };
   }
 
-  setupEventListeners() {
-    if (this.elements.answerForm) {
-      this.elements.answerForm.addEventListener('submit', (e) => this.handleAnswerSubmit(e));
+  bindEvents() {
+    // Theme toggle
+    if (this.dom.themeToggleBtn) {
+      this.dom.themeToggleBtn.addEventListener('click', () => this.toggleTheme());
     }
-    
-    if (this.elements.submitForm) {
-      this.elements.submitForm.addEventListener('submit', (e) => this.handlePuzzleSubmit(e));
+
+    // Start game
+    this.dom.startGameBtn.addEventListener('click', () => this.startNewGame());
+
+    // Submit guess
+    this.dom.answerForm.addEventListener('submit', (e) => this.handleGuessSubmit(e));
+
+    // Record typing for last guess tracking
+    this.dom.answerInput.addEventListener('input', (e) => {
+      this.currentLastGuess = e.target.value.trim();
+    });
+
+    // Skip puzzle
+    this.dom.skipBtn.addEventListener('click', () => this.handleSkip());
+
+    // Drawer triggers
+    this.dom.openDrawerBtn.addEventListener('click', () => this.openDrawer());
+    this.dom.closeDrawerBtn.addEventListener('click', () => this.closeDrawer());
+    this.dom.drawerBackdrop.addEventListener('click', () => this.closeDrawer());
+
+    // Custom puzzle submission
+    this.dom.submitForm.addEventListener('submit', (e) => this.handleCustomPuzzleSubmit(e));
+
+    // Modal triggers
+    this.dom.restartBtn.addEventListener('click', () => {
+      this.closeModal();
+      this.startNewGame();
+    });
+
+    this.dom.drawerFromModalBtn.addEventListener('click', () => {
+      this.closeModal();
+      this.openDrawer();
+    });
+
+    // Keyboard support: Escape closes drawer
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        if (this.dom.submitDrawer.classList.contains('active')) {
+          this.closeDrawer();
+        }
+      }
+    });
+  }
+
+  // ==========================================================================
+  // Theme Switching
+  // ==========================================================================
+
+  applyTheme(theme) {
+    this.theme = theme;
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('rebus_blitz_theme', theme);
+
+    if (this.dom.themeIcon) {
+      this.dom.themeIcon.textContent = theme === 'dark' ? '☀️' : '🌙';
+      this.dom.themeToggleBtn.setAttribute('title', theme === 'dark' ? 'Switch to Editorial Sand' : 'Switch to Soft Dark');
     }
   }
 
-  startGame() {
-    this.gameEngine.startGame(
-      this.currentPuzzle,
-      (state) => this.onGameStateChange(state),
-      (state) => this.onGameOver(state)
-    );
-    
-    this.timerManager.start();
-    this.updatePuzzleDisplay();
+  toggleTheme() {
+    const nextTheme = this.theme === 'dark' ? 'light' : 'dark';
+    this.applyTheme(nextTheme);
+  }
+
+  // ==========================================================================
+  // Game Lifecycle & Flow
+  // ==========================================================================
+
+  startNewGame() {
+    this.isPlaying = true;
+    this.score = 0;
+    this.puzzlesSolved = 0;
+    this.currentStreak = 0;
+    this.bestStreak = 0;
+    this.timeRemaining = this.INITIAL_TIME;
+    this.currentLastGuess = '';
+    this.missedPuzzles = [];
+
+    // Build fresh shuffled deck with zero immediate repeats
+    const allPuzzles = [...DEFAULT_PUZZLES, ...this.customPuzzles];
+    this.activeDeck = shuffleArray(allPuzzles);
+    this.deckIndex = 0;
+
+    // Switch view from Start Screen to Game Panel
+    this.dom.startScreen.style.display = 'none';
+    this.dom.gamePanel.style.display = 'block';
+
+    // Update displays
     this.updateScoreDisplay(0);
-    this.updateTimerDisplay(CONFIG.initialTime);
+    this.updateStreakDisplay();
+    this.updateTimerDisplay();
+
+    // Load first puzzle
+    this.loadCurrentPuzzle();
+
+    // Start timer loop
+    this.startTimer();
+
+    // Focus input
+    setTimeout(() => {
+      this.dom.answerInput.focus();
+    }, 100);
   }
 
-  handleAnswerSubmit(event) {
-    event.preventDefault();
-    const answer = this.elements.answerInput.value.trim();
-    
-    if (!answer) {
-      this.showFeedback('Please enter an answer', 'error');
+  loadCurrentPuzzle() {
+    if (this.deckIndex >= this.activeDeck.length) {
+      // Reshuffle for endless play once full deck exhausted
+      this.activeDeck = shuffleArray([...DEFAULT_PUZZLES, ...this.customPuzzles]);
+      this.deckIndex = 0;
+    }
+
+    this.currentPuzzle = this.activeDeck[this.deckIndex];
+    this.currentLastGuess = '';
+
+    // Smooth transition
+    this.dom.puzzleEmoji.classList.add('puzzle-switch');
+
+    setTimeout(() => {
+      this.dom.puzzleEmoji.textContent = this.currentPuzzle.emoji;
+      this.dom.puzzleHint.textContent = this.currentPuzzle.hint;
+      this.dom.puzzleProgress.textContent = `Puzzle ${this.puzzlesSolved + 1}`;
+
+      this.dom.puzzleEmoji.classList.remove('puzzle-switch');
+      this.dom.puzzleEmoji.classList.add('puzzle-enter');
+
+      setTimeout(() => {
+        this.dom.puzzleEmoji.classList.remove('puzzle-enter');
+      }, 300);
+    }, 150);
+
+    // Clear input
+    this.dom.answerInput.value = '';
+  }
+
+  handleGuessSubmit(e) {
+    e.preventDefault();
+    if (!this.isPlaying || !this.currentPuzzle) return;
+
+    const guess = this.dom.answerInput.value.trim();
+    if (!guess) return;
+
+    this.currentLastGuess = guess;
+
+    if (isAnswerMatch(guess, this.currentPuzzle)) {
+      // Correct!
+      this.onCorrectAnswer();
+    } else {
+      // Wrong!
+      this.onIncorrectAnswer(guess);
+    }
+  }
+
+  onCorrectAnswer() {
+    // Scoring & streak
+    this.score += this.CORRECT_BONUS;
+    this.puzzlesSolved++;
+    this.currentStreak++;
+    if (this.currentStreak > this.bestStreak) {
+      this.bestStreak = this.currentStreak;
+    }
+
+    // Reset timer back to full 30s
+    this.timeRemaining = this.INITIAL_TIME;
+    this.updateTimerDisplay();
+
+    // Update UI
+    this.updateScoreDisplay(this.score, true);
+    this.updateStreakDisplay();
+    this.showFeedback(`+${this.CORRECT_BONUS}! Timer Reset ⚡️`, 'success');
+
+    // Advance puzzle
+    this.deckIndex++;
+    this.loadCurrentPuzzle();
+    this.dom.answerInput.focus();
+  }
+
+  onIncorrectAnswer(guess) {
+    // Penalty: -5s
+    this.timeRemaining = Math.max(0, this.timeRemaining - this.INCORRECT_PENALTY);
+    this.currentStreak = 0;
+    this.updateStreakDisplay();
+    this.updateTimerDisplay();
+
+    // Visual feedback
+    this.dom.inputGroup.classList.add('shake-error');
+    this.dom.timerPill.classList.add('timer-penalty-flash');
+    this.showFeedback(`-${this.INCORRECT_PENALTY}s Penalty! Try again`, 'error');
+
+    setTimeout(() => {
+      this.dom.inputGroup.classList.remove('shake-error');
+      this.dom.timerPill.classList.remove('timer-penalty-flash');
+    }, 500);
+
+    // Select text for quick re-typing
+    this.dom.answerInput.select();
+
+    // Did penalty trigger game over?
+    if (this.timeRemaining <= 0) {
+      this.recordMissed(this.currentPuzzle, guess);
+      this.triggerGameOver();
+    }
+  }
+
+  handleSkip() {
+    if (!this.isPlaying || !this.currentPuzzle) return;
+
+    // Record as missed before moving on
+    this.recordMissed(this.currentPuzzle, this.currentLastGuess || '(Skipped)');
+
+    // -5s penalty for skipping
+    this.timeRemaining = Math.max(0, this.timeRemaining - this.INCORRECT_PENALTY);
+    this.currentStreak = 0;
+    this.updateStreakDisplay();
+    this.updateTimerDisplay();
+
+    const previousAnswer = this.currentPuzzle.answer;
+    this.showFeedback(`Skipped! Answer: "${previousAnswer}"`, 'info');
+
+    if (this.timeRemaining <= 0) {
+      this.triggerGameOver();
       return;
     }
-    
-    const result = this.gameEngine.processAnswer(answer);
-    
-    if (result.isCorrect) {
-      this.showFeedback(result.message, 'success');
-      this.elements.answerInput.value = '';
-      
-      // Get next puzzle after delay
-      setTimeout(() => {
-        this.currentPuzzle = this.getRandomFallbackPuzzle();
-        this.gameEngine.updatePuzzle(this.currentPuzzle);
-        this.updatePuzzleDisplay();
-      }, 1000);
-      
-    } else {
-      this.showFeedback(result.message, 'error');
-      this.elements.answerInput.select();
+
+    this.deckIndex++;
+    this.loadCurrentPuzzle();
+    this.dom.answerInput.focus();
+  }
+
+  recordMissed(puzzle, userGuess) {
+    if (!puzzle) return;
+    if (!this.missedPuzzles.some(m => m.id === puzzle.id)) {
+      this.missedPuzzles.push({
+        id: puzzle.id,
+        emoji: puzzle.emoji,
+        answer: puzzle.answer,
+        aliases: puzzle.aliases || [],
+        hint: puzzle.hint,
+        userGuess: userGuess || '(No guess)'
+      });
     }
   }
 
-  handlePuzzleSubmit(event) {
-    event.preventDefault();
-    this.showSubmitFeedback('Puzzle submission disabled in standalone mode', 'warning');
-  }
+  // ==========================================================================
+  // Timer Management
+  // ==========================================================================
 
-  onGameStateChange(state) {
-    this.updateScoreDisplay(state.score);
-    this.updateTimerDisplay(state.timeRemaining);
-  }
+  startTimer() {
+    this.stopTimer();
+    this.timerInterval = setInterval(() => {
+      if (this.isPausedForDrawer) return;
 
-  onTimerTick(remaining) {
-    this.updateTimerDisplay(remaining);
-    
-    // Sync with game engine
-    const state = this.gameEngine.getState();
-    if (state.timeRemaining !== remaining && !state.isGameOver) {
-      this.gameEngine.state.timeRemaining = remaining;
-    }
-  }
+      this.timeRemaining--;
+      this.updateTimerDisplay();
 
-  onTimerComplete() {
-    this.gameEngine.triggerGameOver();
-  }
-
-  onGameOver(state) {
-    this.timerManager.stop();
-    this.showGameOverScreen(state);
-  }
-
-  updatePuzzleDisplay() {
-    if (this.elements.puzzle && this.currentPuzzle) {
-      this.elements.puzzle.textContent = this.currentPuzzle.emoji;
-    }
-    if (this.elements.hint && this.currentPuzzle) {
-      this.elements.hint.textContent = this.currentPuzzle.hint;
-    }
-  }
-
-  updateScoreDisplay(score) {
-    if (this.elements.score) {
-      this.elements.score.textContent = score;
-      this.elements.score.classList.add('score-update');
-      setTimeout(() => this.elements.score.classList.remove('score-update'), 300);
-    }
-  }
-
-  updateTimerDisplay(seconds) {
-    if (this.elements.timer) {
-      this.elements.timer.textContent = seconds;
-      
-      if (seconds <= 10) {
-        this.elements.timer.classList.add('time-low');
-      } else {
-        this.elements.timer.classList.remove('time-low');
+      if (this.timeRemaining <= 0) {
+        this.timeRemaining = 0;
+        if (this.currentPuzzle) {
+          this.recordMissed(this.currentPuzzle, this.currentLastGuess || '(Time expired)');
+        }
+        this.triggerGameOver();
       }
-      
-      if (seconds < CONFIG.initialTime) {
-        this.elements.timer.classList.add('time-penalty');
-        setTimeout(() => this.elements.timer.classList.remove('time-penalty'), 500);
-      }
+    }, 1000);
+  }
+
+  stopTimer() {
+    if (this.timerInterval) {
+      clearInterval(this.timerInterval);
+      this.timerInterval = null;
     }
   }
 
-  getFallbackPuzzle() {
-    return {
-      emoji: '🌊🏄‍♂️',
-      answer: 'surfing',
-      hint: 'Something surfers do',
-      id: 'fallback-1',
+  updateTimerDisplay() {
+    this.dom.timer.textContent = this.timeRemaining;
+
+    // Visual timer states
+    this.dom.timerPill.classList.remove('timer-warning', 'timer-danger');
+    if (this.timeRemaining <= 5) {
+      this.dom.timerPill.classList.add('timer-danger');
+    } else if (this.timeRemaining <= 12) {
+      this.dom.timerPill.classList.add('timer-warning');
+    }
+  }
+
+  // ==========================================================================
+  // Game Over Handling & Missed Puzzles Review
+  // ==========================================================================
+
+  triggerGameOver() {
+    this.isPlaying = false;
+    this.stopTimer();
+
+    // Check high score
+    const isNewHigh = this.score > this.highScore;
+    if (isNewHigh) {
+      this.highScore = this.score;
+      localStorage.setItem('rebus_blitz_high_score', this.highScore.toString());
+      this.updateHighScoreDisplay();
+    }
+
+    // Populate modal stats
+    this.dom.finalScore.textContent = this.score;
+    this.dom.puzzlesSolved.textContent = this.puzzlesSolved;
+    this.dom.bestStreakDisplay.textContent = this.bestStreak;
+    this.dom.newHighScoreTag.style.display = isNewHigh && this.score > 0 ? 'inline-block' : 'none';
+
+    // Populate Missed Puzzles List (Transparency / Review)
+    this.renderMissedPuzzles();
+
+    // Show modal (properly centered)
+    this.openModal();
+  }
+
+  renderMissedPuzzles() {
+    if (!this.dom.missedSection || !this.dom.missedList) return;
+
+    if (this.missedPuzzles.length === 0) {
+      this.dom.missedSection.style.display = 'none';
+      return;
+    }
+
+    this.dom.missedSection.style.display = 'block';
+    this.dom.missedCountTag.textContent = this.missedPuzzles.length;
+
+    this.dom.missedList.innerHTML = this.missedPuzzles.map(item => {
+      const aliasHint = item.aliases && item.aliases.length > 0 
+        ? `<span class="alt-hint">(also: ${item.aliases.slice(0, 2).join(', ')})</span>` 
+        : '';
+
+      const userGuessMarkup = item.userGuess && item.userGuess !== '(No guess)' && item.userGuess !== '(Skipped)' && item.userGuess !== '(Time expired)'
+        ? `<span class="user-guess">"${item.userGuess}"</span>`
+        : `<span style="font-style:italic;">${item.userGuess}</span>`;
+
+      return `
+        <div class="missed-card">
+          <div class="missed-card-emoji">${item.emoji}</div>
+          <div class="missed-card-content">
+            <div class="missed-card-answer">
+              ${item.answer} ${aliasHint}
+            </div>
+            <div class="missed-card-hint">💡 ${item.hint}</div>
+            <div class="missed-card-user">Your guess: ${userGuessMarkup}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  openModal() {
+    this.dom.gameOverModal.style.display = 'flex';
+    void this.dom.gameOverModal.offsetWidth;
+    this.dom.gameOverModal.classList.add('active');
+    this.dom.gameOverModal.setAttribute('aria-hidden', 'false');
+    this.dom.restartBtn.focus();
+  }
+
+  closeModal() {
+    this.dom.gameOverModal.classList.remove('active');
+    this.dom.gameOverModal.setAttribute('aria-hidden', 'true');
+    setTimeout(() => {
+      this.dom.gameOverModal.style.display = 'none';
+    }, 250);
+  }
+
+  // ==========================================================================
+  // Drawer & Custom Puzzles
+  // ==========================================================================
+
+  openDrawer() {
+    if (this.isPlaying) {
+      this.isPausedForDrawer = true;
+    }
+    this.dom.drawerBackdrop.classList.add('active');
+    this.dom.submitDrawer.classList.add('active');
+    this.dom.drawerBackdrop.setAttribute('aria-hidden', 'false');
+    this.dom.submitDrawer.setAttribute('aria-hidden', 'false');
+    this.dom.emojiInput.focus();
+  }
+
+  closeDrawer() {
+    this.dom.drawerBackdrop.classList.remove('active');
+    this.dom.submitDrawer.classList.remove('active');
+    this.dom.drawerBackdrop.setAttribute('aria-hidden', 'true');
+    this.dom.submitDrawer.setAttribute('aria-hidden', 'true');
+
+    if (this.isPlaying) {
+      this.isPausedForDrawer = false;
+      this.dom.answerInput.focus();
+    }
+  }
+
+  setupDrawerPreview() {
+    const updatePreview = () => {
+      const emojiVal = this.dom.emojiInput.value.trim() || '🍿🎬';
+      const hintVal = this.dom.hintInput.value.trim() || 'Cinema screening with snacks';
+      this.dom.previewEmoji.textContent = emojiVal;
+      this.dom.previewHint.textContent = hintVal;
     };
+
+    this.dom.emojiInput.addEventListener('input', updatePreview);
+    this.dom.hintInput.addEventListener('input', updatePreview);
   }
 
-  getRandomFallbackPuzzle() {
-    const puzzles = [
-      { emoji: '🌊🏄‍♂️', answer: 'surfing', hint: 'Something surfers do' },
-      { emoji: '🐝📄', answer: 'beeline', hint: 'Direct route like a bee to honey' },
-      { emoji: '👁️💭', answer: 'idea', hint: 'A thought or concept' },
-      { emoji: '🕷️🦸‍♂️', answer: 'spiderman', hint: 'Web-slinging superhero' },
-      { emoji: '🧠💥', answer: 'brainstorm', hint: 'Creative thinking session' },
-    ];
-    
-    return puzzles[Math.floor(Math.random() * puzzles.length)];
+  handleCustomPuzzleSubmit(e) {
+    e.preventDefault();
+
+    const emoji = this.dom.emojiInput.value.trim();
+    const answer = this.dom.answerInputSubmit.value.trim();
+    const hint = this.dom.hintInput.value.trim();
+
+    // Validation
+    if (!hasEmoji(emoji)) {
+      this.showSubmitFeedback('Please include at least one valid emoji or symbol!', 'error');
+      return;
+    }
+
+    if (answer.length < 2) {
+      this.showSubmitFeedback('Answer must be at least 2 characters long.', 'error');
+      return;
+    }
+
+    if (hint.length < 3) {
+      this.showSubmitFeedback('Please provide a helpful hint for players.', 'error');
+      return;
+    }
+
+    // Create puzzle
+    const newPuzzle = {
+      id: 'custom_' + Date.now(),
+      emoji,
+      answer,
+      aliases: [],
+      hint,
+      isCustom: true
+    };
+
+    // Save locally
+    this.customPuzzles.push(newPuzzle);
+    localStorage.setItem('rebus_blitz_custom_puzzles', JSON.stringify(this.customPuzzles));
+
+    // Also inject into active deck if game is running
+    if (this.isPlaying) {
+      this.activeDeck.push(newPuzzle);
+    }
+
+    // Success feedback
+    this.showSubmitFeedback('🎉 Rebus added! It is now in the rotation.', 'success');
+    this.dom.submitForm.reset();
+    this.dom.previewEmoji.textContent = '🍿🎬';
+    this.dom.previewHint.textContent = 'Cinema screening with snacks';
+
+    setTimeout(() => {
+      this.clearSubmitFeedback();
+    }, 3500);
+  }
+
+  loadCustomPuzzles() {
+    try {
+      const data = localStorage.getItem('rebus_blitz_custom_puzzles') || localStorage.getItem('emoji_rebus_custom_puzzles');
+      return data ? JSON.parse(data) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  // ==========================================================================
+  // UI Helpers & Feedback
+  // ==========================================================================
+
+  updateScoreDisplay(score, pulse = false) {
+    this.dom.score.textContent = score;
+    if (pulse && this.dom.scoreChip) {
+      this.dom.scoreChip.classList.add('stat-pulse');
+      setTimeout(() => {
+        this.dom.scoreChip.classList.remove('stat-pulse');
+      }, 300);
+    }
+  }
+
+  updateHighScoreDisplay() {
+    this.dom.highScore.textContent = this.highScore;
+  }
+
+  updateStreakDisplay() {
+    this.dom.streakCount.textContent = this.currentStreak;
+    if (this.currentStreak >= 3) {
+      this.dom.streakPill.style.color = '#fbbf24';
+      this.dom.streakPill.style.borderColor = 'rgba(251, 191, 36, 0.4)';
+    } else {
+      this.dom.streakPill.style.color = '#f97316';
+      this.dom.streakPill.style.borderColor = 'rgba(249, 115, 22, 0.2)';
+    }
   }
 
   showFeedback(message, type = 'info') {
-    if (this.elements.feedback) {
-      this.elements.feedback.textContent = message;
-      this.elements.feedback.className = `feedback feedback-${type}`;
-      if (type === 'success') {
-        setTimeout(() => this.clearFeedback(), 3000);
-      }
+    if (this.feedbackTimeout) {
+      clearTimeout(this.feedbackTimeout);
     }
+
+    this.dom.feedback.textContent = message;
+    this.dom.feedback.className = `feedback-banner show feedback-${type}`;
+
+    this.feedbackTimeout = setTimeout(() => {
+      this.dom.feedback.className = 'feedback-banner';
+      this.dom.feedback.textContent = '';
+    }, 2400);
   }
 
   showSubmitFeedback(message, type = 'info') {
-    if (this.elements.submitFeedback) {
-      this.elements.submitFeedback.textContent = message;
-      this.elements.submitFeedback.className = `feedback feedback-${type}`;
-    }
+    this.dom.submitFeedback.textContent = message;
+    this.dom.submitFeedback.className = `feedback-banner show feedback-${type}`;
   }
 
-  showError(message) {
-    this.showFeedback(message, 'error');
-  }
-
-  clearFeedback() {
-    if (this.elements.feedback) {
-      this.elements.feedback.textContent = '';
-      this.elements.feedback.className = 'feedback';
-    }
-  }
-
-  showGameOverScreen(state) {
-    if (!this.elements.gameOverScreen) {
-      this.createGameOverScreen();
-    }
-    
-    const finalScoreEl = document.getElementById('final-score');
-    if (finalScoreEl) finalScoreEl.textContent = state.score;
-    
-    const puzzlesSolvedEl = document.getElementById('puzzles-solved');
-    if (puzzlesSolvedEl) puzzlesSolvedEl.textContent = state.puzzlesSolved;
-    
-    this.elements.gameOverScreen.style.display = 'block';
-    if (this.elements.answerInput) this.elements.answerInput.disabled = true;
-  }
-
-  createGameOverScreen() {
-    const screen = document.createElement('div');
-    screen.id = 'game-over-screen';
-    screen.className = 'game-over-screen';
-    screen.style.display = 'none';
-    
-    screen.innerHTML = `
-      <div class="game-over-content">
-        <h2>⏰ Game Over! ⏰</h2>
-        <div class="game-over-stats">
-          <div class="stat">
-            <span class="stat-label">Final Score:</span>
-            <span id="final-score" class="stat-value">0</span>
-          </div>
-          <div class="stat">
-            <span class="stat-label">Puzzles Solved:</span>
-            <span id="puzzles-solved" class="stat-value">0</span>
-          </div>
-        </div>
-        <button id="restart-button" class="restart-button">Play Again</button>
-      </div>
-    `;
-    
-    document.body.appendChild(screen);
-    this.elements.gameOverScreen = screen;
-    
-    document.getElementById('restart-button').addEventListener('click', () => this.restartGame());
-  }
-
-  restartGame() {
-    if (this.elements.gameOverScreen) {
-      this.elements.gameOverScreen.style.display = 'none';
-    }
-    
-    if (this.elements.answerInput) {
-      this.elements.answerInput.disabled = false;
-    }
-    
-    this.gameEngine.resetGame();
-    this.currentPuzzle = this.getRandomFallbackPuzzle();
-    this.startGame();
+  clearSubmitFeedback() {
+    this.dom.submitFeedback.className = 'feedback-banner';
+    this.dom.submitFeedback.textContent = '';
   }
 }
 
-// Initialize when page loads
-const game = new EmojiRebusBlitz();
-window.addEventListener('DOMContentLoaded', () => game.init());
+// Initialize on DOM Ready
+document.addEventListener('DOMContentLoaded', () => {
+  const app = new RebusBlitzApp();
+  app.init();
+});

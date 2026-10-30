@@ -1,73 +1,263 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Emoji Rebus Blitz 🎉</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Rebus Blitz</title>
+    <meta name="description" content="Fast-paced, addictive rebus puzzle game. Decode the clues before the clock expires!">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-    <header>
-        <h1>Emoji Rebus Blitz 🎉</h1>
-        <div class="score-display">
-            Score: <span id="score">0</span>
+    <!-- Ambient Background Lighting -->
+    <div class="ambient-glow glow-top"></div>
+    <div class="ambient-glow glow-bottom"></div>
+
+    <div class="app-layout">
+        <!-- Top Navigation Bar -->
+        <header class="app-header">
+            <div class="header-main-row">
+                <div class="brand">
+                    <span class="brand-icon">⚡️</span>
+                    <span class="brand-name">Rebus Blitz</span>
+                </div>
+
+                <div class="header-controls">
+                    <button id="theme-toggle-btn" class="btn-icon-toggle" aria-label="Toggle theme" title="Toggle between Soft Dark & Editorial Sand">
+                        <span id="theme-icon" class="theme-icon">☀️</span>
+                    </button>
+                    <button id="open-drawer-btn" class="btn-drawer" aria-label="Open puzzle creation drawer">
+                        <span class="btn-drawer-icon">💡</span>
+                        <span class="btn-drawer-label">+ Submit Rebus</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="header-stats-row">
+                <div class="stat-chip high-score-chip" title="All-time personal best">
+                    <span class="stat-icon">🏆</span>
+                    <span class="stat-title">Best</span>
+                    <span id="high-score" class="stat-val">0</span>
+                </div>
+                <div class="stat-chip current-score-chip" title="Current session score">
+                    <span class="stat-icon">⭐</span>
+                    <span class="stat-title">Score</span>
+                    <span id="score" class="stat-val">0</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Centered Game Stage -->
+        <main class="game-stage">
+            <!-- 1. Start / Ready Screen -->
+            <section id="start-screen" class="card-stage screen-active">
+                <div class="start-hero">
+                    <div class="hero-badge">🎯</div>
+                    <h1 class="hero-title">Rebus Blitz</h1>
+                    <p class="hero-subtitle">Solve as many rebus puzzles as you can before the 30-second clock expires!</p>
+                </div>
+
+                <div class="rules-container">
+                    <div class="rule-card">
+                        <span class="rule-emoji">⏱️</span>
+                        <div class="rule-details">
+                            <strong>30s Countdown</strong>
+                            <span>Resets back to 30s every time you guess correctly</span>
+                        </div>
+                    </div>
+                    <div class="rule-card">
+                        <span class="rule-emoji">⚡️</span>
+                        <div class="rule-details">
+                            <strong>+100 Points</strong>
+                            <span>Stack points and build up your winning streak</span>
+                        </div>
+                    </div>
+                    <div class="rule-card">
+                        <span class="rule-emoji">⚠️</span>
+                        <div class="rule-details">
+                            <strong>-5s Penalty</strong>
+                            <span>Incorrect guesses deduct seconds from your timer</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="start-game-btn" class="btn-primary btn-start">
+                    <span>Start Blitz</span>
+                    <span class="btn-start-icon">▶</span>
+                </button>
+            </section>
+
+            <!-- 2. Active Game Panel Screen -->
+            <section id="game-panel" class="card-stage" style="display: none;">
+                <!-- Game Status HUD -->
+                <div class="game-hud">
+                    <div class="hud-chip puzzle-counter-chip">
+                        <span class="hud-dot"></span>
+                        <span id="puzzle-progress">Puzzle 1</span>
+                    </div>
+
+                    <div id="timer-pill" class="hud-chip timer-chip">
+                        <span class="timer-symbol">⏱️</span>
+                        <span id="timer" class="timer-digits">30</span>
+                        <span class="timer-unit">s</span>
+                    </div>
+
+                    <div id="streak-pill" class="hud-chip streak-chip">
+                        <span class="streak-icon">🔥</span>
+                        <span id="streak-count" class="streak-val">0</span>
+                    </div>
+                </div>
+
+                <!-- Puzzle Display Section -->
+                <div class="puzzle-display-box" id="puzzle-box">
+                    <div id="puzzle" class="puzzle-emoji">🌊🏄‍♂️</div>
+                    <div class="hint-pill">
+                        <span class="hint-tag">HINT</span>
+                        <span id="hint" class="hint-message">Riding ocean waves on a board</span>
+                    </div>
+                </div>
+
+                <!-- Answer Form -->
+                <form id="answer-form" class="answer-form" autocomplete="off">
+                    <div class="input-group">
+                        <input 
+                            type="text" 
+                            id="answer-input" 
+                            placeholder="Type your guess..." 
+                            autocomplete="off" 
+                            spellcheck="false" 
+                            autocapitalize="off"
+                        >
+                        <button type="submit" id="submit-guess-btn" class="btn-guess">
+                            <span>Submit</span>
+                            <span class="key-hint">↵</span>
+                        </button>
+                    </div>
+
+                    <div class="form-sub-actions">
+                        <button type="button" id="skip-btn" class="btn-skip" title="Pass this puzzle (-5s penalty)">
+                            Skip (-5s)
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Feedback Toast -->
+                <div id="feedback" class="feedback-banner" aria-live="polite"></div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>Rebus Blitz • Play & Create Puzzles</p>
+        </footer>
+    </div>
+
+    <!-- Side Drawer: Submit Your Own Rebus -->
+    <div id="drawer-backdrop" class="drawer-backdrop" aria-hidden="true"></div>
+    <aside id="submit-drawer" class="submit-drawer" aria-hidden="true" role="dialog" aria-labelledby="drawer-title">
+        <div class="drawer-header">
+            <div class="drawer-header-left">
+                <span class="drawer-header-icon">💡</span>
+                <h2 id="drawer-title">Create a Rebus</h2>
+            </div>
+            <button id="close-drawer-btn" class="btn-drawer-close" aria-label="Close drawer">✕</button>
         </div>
-    </header>
 
-    <main>
-        <section id="game-panel">
-            <div class="puzzle-display">
-                <h2>Decode the Rebus!</h2>
-                <div id="puzzle" class="emoji-large">🌊🏄‍♂️</div>
-                <div id="hint" class="hint-text">Something surfers do</div>
-            </div>
+        <div class="drawer-content">
+            <p class="drawer-subtitle">Invent a clever rebus puzzle! It will be added to your game rotation immediately.</p>
 
-            <div class="timer-display">
-                <div class="timer-label">Time Remaining:</div>
-                <div id="timer" class="timer-count">30</div>
-                <div class="timer-unit">seconds</div>
-            </div>
+            <form id="submit-form" class="submit-form" autocomplete="off">
+                <div class="form-field">
+                    <label for="emoji-input">Rebus Clue</label>
+                    <input type="text" id="emoji-input" placeholder="e.g. 🍿🎬" required>
+                    <span class="field-help">Use one or more emoji or symbols</span>
+                </div>
 
-            <form id="answer-form" class="answer-form">
-                <label for="answer-input">Your Answer:</label>
-                <input type="text" id="answer-input" placeholder="Type your guess..." autocomplete="off">
-                <button type="submit">Submit Guess</button>
+                <div class="form-field">
+                    <label for="answer-input-submit">Answer</label>
+                    <input type="text" id="answer-input-submit" placeholder="e.g. movie night" required>
+                    <span class="field-help">The correct phrase or word</span>
+                </div>
+
+                <div class="form-field">
+                    <label for="hint-input">Helpful Hint</label>
+                    <input type="text" id="hint-input" placeholder="e.g. Cinema screening with snacks" required>
+                    <span class="field-help">Give players a subtle nudge</span>
+                </div>
+
+                <!-- Live Preview of Puzzle -->
+                <div class="preview-panel">
+                    <span class="preview-title">In-Game Preview</span>
+                    <div class="preview-card">
+                        <div id="preview-emoji" class="preview-emoji">🍿🎬</div>
+                        <div id="preview-hint" class="preview-hint">Cinema screening with snacks</div>
+                    </div>
+                </div>
+
+                <button type="submit" id="submit-puzzle-btn" class="btn-primary btn-full">
+                    <span>Add to Puzzle Deck</span>
+                </button>
             </form>
 
-            <div id="feedback" class="feedback" aria-live="polite"></div>
-        </section>
+            <div id="submit-feedback" class="feedback-banner" aria-live="polite"></div>
+        </div>
+    </aside>
 
-        <section id="submit-panel">
-            <h2>Submit Your Own Puzzle</h2>
-            <form id="submit-form" class="submit-form">
-                <div class="form-group">
-                    <label for="emoji-input">Emoji String:</label>
-                    <input type="text" id="emoji-input" placeholder="e.g., 🌊🏄‍♂️">
+    <!-- Game Over Centered Modal with Missed Answers Review -->
+    <div id="game-over-modal" class="modal-overlay" aria-hidden="true" style="display: none;">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-icon-badge">⏰</div>
+                <h2 class="modal-title">Time's Up!</h2>
+                <p class="modal-subtitle">Blitz round complete! Check your stats below:</p>
+            </div>
+
+            <div class="modal-stats">
+                <div class="stat-highlight">
+                    <span class="stat-highlight-label">Final Score</span>
+                    <span id="final-score" class="stat-highlight-val">0</span>
+                    <div id="new-high-score-tag" class="high-score-tag" style="display: none;">
+                        🎉 New Personal Best!
+                    </div>
                 </div>
-                
-                <div class="form-group">
-                    <label for="answer-input-submit">Correct Answer:</label>
-                    <input type="text" id="answer-input-submit" placeholder="e.g., surfing">
+
+                <div class="stats-duo">
+                    <div class="duo-box">
+                        <span class="duo-label">Puzzles Solved</span>
+                        <span id="puzzles-solved" class="duo-val">0</span>
+                    </div>
+                    <div class="duo-box">
+                        <span class="duo-label">Best Streak</span>
+                        <span id="best-streak" class="duo-val">0</span>
+                    </div>
                 </div>
-                
-                <div class="form-group">
-                    <label for="hint-input">Helpful Hint:</label>
-                    <input type="text" id="hint-input" placeholder="e.g., Something surfers do">
+            </div>
+
+            <!-- Missed Puzzles Section (Transparency) -->
+            <div id="missed-section" class="missed-section" style="display: none;">
+                <div class="missed-section-title">
+                    <span>Missed Puzzles & Answers</span>
+                    <span id="missed-count-tag" class="missed-count-tag">0</span>
                 </div>
-                
-                <button type="submit">Submit Puzzle</button>
-            </form>
+                <div id="missed-list" class="missed-list">
+                    <!-- Populated dynamically via app.js -->
+                </div>
+            </div>
 
-            <div id="submit-feedback" class="feedback" aria-live="polite"></div>
-        </section>
-    </main>
+            <div class="modal-actions">
+                <button id="restart-button" class="btn-primary btn-full btn-restart">
+                    <span>Play Again 🔄</span>
+                </button>
+                <button id="drawer-from-modal-btn" class="btn-secondary btn-full">
+                    <span>💡 Submit a New Rebus</span>
+                </button>
+            </div>
+        </div>
+    </div>
 
-    <footer>
-        <p>Emoji Rebus Blitz v0.1.0</p>
-        <p><small>Running in standalone mode. Refresh for new puzzles!</small></p>
-    </footer>
-
-    <!-- Use bundled version for testing -->
-    <script src="/app-bundled.js"></script>
+    <!-- Main Game Script (ES Module) -->
+    <script type="module" src="/app.js"></script>
 </body>
 </html>
