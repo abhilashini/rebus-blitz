@@ -134,6 +134,7 @@ class RebusBlitzApp {
     this.bindEvents();
     this.updateHighScoreDisplay();
     this.setupDrawerPreview();
+    this.fetchCommunityPuzzles();
     console.log('Rebus Blitz initialized with', DEFAULT_PUZZLES.length + this.customPuzzles.length, 'puzzles.');
   }
 
@@ -643,6 +644,31 @@ class RebusBlitzApp {
     this.dom.hintInput.addEventListener('input', updatePreview);
   }
 
+  async fetchCommunityPuzzles() {
+    try {
+      const response = await fetch('/api/puzzles');
+      if (!response.ok) return;
+      const data = await response.json();
+      if (data.success && Array.isArray(data.puzzles) && data.puzzles.length > 0) {
+        const existingIds = new Set(this.customPuzzles.map(p => p.id));
+        let added = 0;
+        for (const p of data.puzzles) {
+          if (!existingIds.has(p.id)) {
+            this.customPuzzles.push(p);
+            existingIds.add(p.id);
+            added++;
+          }
+        }
+        if (added > 0) {
+          localStorage.setItem('rebus_blitz_custom_puzzles', JSON.stringify(this.customPuzzles));
+          console.log(`[Rebus Blitz] Synced ${added} community puzzles from KV store`);
+        }
+      }
+    } catch {
+      // Offline or static server without /api, ignore gracefully
+    }
+  }
+
   handleCustomPuzzleSubmit(e) {
     e.preventDefault();
 
@@ -682,7 +708,7 @@ class RebusBlitzApp {
       isCustom: true
     };
 
-    // Save locally
+    // 1. Save locally immediately for 0ms latency
     this.customPuzzles.push(newPuzzle);
     localStorage.setItem('rebus_blitz_custom_puzzles', JSON.stringify(this.customPuzzles));
 
@@ -696,6 +722,28 @@ class RebusBlitzApp {
     this.dom.submitForm.reset();
     this.dom.previewEmoji.textContent = '🍿🎬';
     this.dom.previewHint.textContent = 'Cinema screening with snacks';
+
+    // 2. Dispatch to KV backend API in background
+    try {
+      fetch('/api/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          emoji,
+          answer,
+          aliases,
+          hint
+        })
+      }).then(res => res.json()).then(data => {
+        if (data.success) {
+          console.log('[Rebus Blitz] Puzzle synced to Vercel KV store:', data.puzzleId);
+        }
+      }).catch(err => {
+        console.log('[Rebus Blitz] Running offline/static, saved locally:', err.message);
+      });
+    } catch {
+      // ignore
+    }
 
     setTimeout(() => {
       this.clearSubmitFeedback();

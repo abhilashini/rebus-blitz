@@ -26,13 +26,15 @@ export default async function handler(req, res) {
   }
   
   try {
-    // Parse request body
-    let body = '';
-    for await (const chunk of req) {
-      body += chunk;
+    // Parse request body (supports both pre-parsed req.body and raw stream)
+    let data = req.body;
+    if (typeof data !== 'object' || data === null) {
+      let body = '';
+      for await (const chunk of req) {
+        body += chunk;
+      }
+      data = JSON.parse(body || '{}');
     }
-    
-    const data = JSON.parse(body || '{}');
     
     // Validate submission
     const validation = validateSubmission(data);
